@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fun Time Game</title>
-    <script type="module" src="/3d.js"></script>
-    <script type="importmap">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fun Time Game</title>
+  <script type="module" src="/3d.js"></script>
+  <script type="importmap">
         {
           "imports": {
             "three": "https://cdn.jsdelivr.net/npm/three@0.176.0/build/three.module.js",
@@ -13,14 +14,28 @@
           }
         }
     </script>
-    <style>
-      *{
-        margin: 0; 
-        padding: 0;
-      }
-    </style>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+    }
+
+    #canvas {
+      min-width: 100%;
+      min-height: 100%;
+      display: block;
+    }
+
+    canvas:focus {
+      outline: none;
+    }
+  </style>
 </head>
+
 <body>
-  <canvas id="canvas"></canvas>
+  <canvas tabindex="0" id="canvas"></canvas>
 </body>
+
 </html>
