@@ -5,6 +5,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Fun Time Game</title>
+</head>
+
+<body>
+  <canvas tabindex="0" id="canvas"></canvas>
   <script type="module" src="/3d.js"></script>
   <script type="importmap">
         {
@@ -22,6 +26,10 @@
       width: 100%;
     }
 
+    body{
+      /* background-image: url('/images/background.jpg'); */
+    }
+
     #canvas {
       min-width: 100%;
       min-height: 100%;
@@ -32,10 +40,6 @@
       outline: none;
     }
   </style>
-</head>
-
-<body>
-  <canvas tabindex="0" id="canvas"></canvas>
 </body>
 
 </html>

@@ -1,13 +1,14 @@
 import * as THREE from 'three';
 // import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import RAPIER from 'https://cdn.skypack.dev/@dimforge/rapier3d-compat';
+// import RAPIER from 'https://cdn.skypack.dev/@dimforge/rapier3d-compat';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+// import Jolt from 'https://www.unpkg.com/jolt-physics/dist/jolt-physics.wasm-compat.js';
 
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, (window.innerWidth) / (window.innerHeight), 0.1, 1000);
 const canvas = document.querySelector('#canvas');
-const renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
+const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, premultipliedAlpha: false });
 renderer.setSize(window.innerWidth, window.innerHeight);
 // document.body.appendChild(renderer.domElement);
 
@@ -66,9 +67,26 @@ function resizeRendererToDisplaySize(renderer) {
 function movePlayer() {
     for (let key of Object.keys(keyPressed)) {
         if (keyPressed[key] == true) {
-            console.log(key);
             return key
         }
+    }
+}
+
+function checkCollision(){
+    for(let geo1 of geos){
+        for(let geo2 of geos){
+
+        }
+    }
+}
+
+let geos = [];
+
+function createGeos(size, num, material){
+    let geo = new THREE.BoxGeometry(size, size, size);
+    let funcMaterial = new THREE.MeshPhongMaterial({ color: material, flatShading: true });
+    for(let i=0; i<num; i++){
+        geos.push(new THREE.Mesh(geo, funcMaterial));
     }
 }
 
@@ -77,7 +95,7 @@ function animate() {
         camera.aspect = canvas.clientWidth / canvas.clientHeight;
         camera.updateProjectionMatrix();
     }
-    let moveInt = 0.1;
+    let moveInt = 0.5;
     
     switch (movePlayer()) {
         case 'ArrowRight':
@@ -99,6 +117,7 @@ function animate() {
             cube.position.y += moveInt;
             break;
     }
+    console.log(cube.geometry);
     renderer.render(scene, camera);
 }
 renderer.setAnimationLoop(animate);
