@@ -24,14 +24,15 @@ const geometry = new THREE.BoxGeometry(1, 1, 1);
 const flatGeo = new THREE.PlaneGeometry(10, 10);
 const material = new THREE.MeshPhongMaterial({ color: 0x00ff00, flatShading: true });
 const material2 = new THREE.MeshPhongMaterial({ map: texture, side: THREE.DoubleSide });
+const material3 = new THREE.MeshPhongMaterial({ color: 'blue' });
 const player = new THREE.Mesh(geometry, material);
-let cube2 = new THREE.Mesh(geometry, material);
+let cube2 = new THREE.Mesh(geometry, material3);
 let plane = new THREE.Mesh(flatGeo, material2);
 // cube.geometry.computeBoundingBox();
 // cube2.geometry.computeBoundingBox();
 scene.add(player);
-// scene.add(cube2);
-cube2.position.x += 50;
+scene.add(cube2);
+cube2.position.x += 5;
 scene.add(plane);
 
 const playerBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
@@ -61,9 +62,9 @@ const intensity = 3;
 const light = new THREE.AmbientLight(color, intensity);
 scene.add(light);
 
-const controls = new OrbitControls(camera, canvas);
-controls.target.set(0, 5, 0);
-controls.update();
+// const controls = new OrbitControls(camera, canvas);
+// controls.target.set(0, 5, 0);
+// controls.update();
 
 function resizeRendererToDisplaySize(renderer) {
     const width = canvas.clientWidth;
@@ -83,13 +84,15 @@ function movePlayer() {
     }
 }
 
+let currentScore = 0;
+
 function checkCollision() {
     for (let box2 of bBoxes) {
         if (playerBox.containsBox(box2) || playerBox.intersectsBox(box2)) {
-            // console.log(true);
             scene.remove(player);
+            gameOver(currentScore);
         } else {
-            // console.log(false);
+            currentScore++;
         }
     }
 }
@@ -106,6 +109,10 @@ function createGeos(size, num, material) {
     }
 }
 
+function gameOver(score) {
+
+}
+
 function animate() {
     if (resizeRendererToDisplaySize(renderer)) {
         camera.aspect = canvas.clientWidth / canvas.clientHeight;
@@ -119,15 +126,27 @@ function animate() {
         case 'ArrowLeft':
             player.position.x -= moveInt;
             break;
-        // case 'ArrowUp':
-        //     player.position.z -= moveInt;
-        //     break;
-        // case 'ArrowDown':
-        //     player.position.z += moveInt;
-        //     break;
-        // case 'Control':
-        //     player.position.y -= moveInt;
-        //     break;
+        case 'd':
+            cube2.position.x += moveInt;
+            break;
+        case 'a':
+            cube2.position.x -= moveInt;
+            break;
+        case 'w':
+            cube2.position.z -= moveInt;
+            break;
+        case 's':
+            cube2.position.z += moveInt;
+            break;
+        case 'ArrowUp':
+            player.position.z -= moveInt;
+            break;
+        case 'ArrowDown':
+            player.position.z += moveInt;
+            break;
+        case 'Control':
+            player.position.y -= moveInt;
+            break;
         case ' ':
             player.position.y += moveInt;
             break;
