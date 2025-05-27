@@ -24,10 +24,21 @@ const geometry = new THREE.BoxGeometry(1, 1, 1);
 const flatGeo = new THREE.PlaneGeometry(10, 10);
 const material = new THREE.MeshPhongMaterial({ color: 0x00ff00, flatShading: true });
 const material2 = new THREE.MeshPhongMaterial({ map: texture, side: THREE.DoubleSide });
-const cube = new THREE.Mesh(geometry, material);
+const player = new THREE.Mesh(geometry, material);
+let cube2 = new THREE.Mesh(geometry, material);
 let plane = new THREE.Mesh(flatGeo, material2);
-scene.add(cube);
+// cube.geometry.computeBoundingBox();
+// cube2.geometry.computeBoundingBox();
+scene.add(player);
+// scene.add(cube2);
+cube2.position.x += 50;
 scene.add(plane);
+
+const playerBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+// cube1Box.setFromObject(cube);
+// cube1Box.union(cube);
+const cube2Box = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+cube2Box.setFromObject(cube2);
 
 plane.position.y = -1;
 // plane.position.y = 48;
@@ -72,20 +83,25 @@ function movePlayer() {
     }
 }
 
-function checkCollision(){
-    for(let geo1 of geos){
-        for(let geo2 of geos){
-
+function checkCollision() {
+    for (let box2 of bBoxes) {
+        if (playerBox.containsBox(box2) || playerBox.intersectsBox(box2)) {
+            // console.log(true);
+            scene.remove(player);
+        } else {
+            // console.log(false);
         }
     }
 }
 
-let geos = [];
 
-function createGeos(size, num, material){
+let bBoxes = [cube2Box];
+let geos = [cube2];
+
+function createGeos(size, num, material) {
     let geo = new THREE.BoxGeometry(size, size, size);
     let funcMaterial = new THREE.MeshPhongMaterial({ color: material, flatShading: true });
-    for(let i=0; i<num; i++){
+    for (let i = 0; i < num; i++) {
         geos.push(new THREE.Mesh(geo, funcMaterial));
     }
 }
@@ -96,28 +112,31 @@ function animate() {
         camera.updateProjectionMatrix();
     }
     let moveInt = 0.5;
-    
     switch (movePlayer()) {
         case 'ArrowRight':
-            cube.position.x += moveInt;
+            player.position.x += moveInt;
             break;
         case 'ArrowLeft':
-            cube.position.x -= moveInt;
+            player.position.x -= moveInt;
             break;
-        case 'ArrowUp':
-            cube.position.z -= moveInt;
-            break;
-        case 'ArrowDown':
-            cube.position.z += moveInt;
-            break;
-        case 'Control':
-            cube.position.y -= moveInt;
-            break;
+        // case 'ArrowUp':
+        //     player.position.z -= moveInt;
+        //     break;
+        // case 'ArrowDown':
+        //     player.position.z += moveInt;
+        //     break;
+        // case 'Control':
+        //     player.position.y -= moveInt;
+        //     break;
         case ' ':
-            cube.position.y += moveInt;
+            player.position.y += moveInt;
             break;
     }
-    console.log(cube.geometry);
+    for (let j = 0; j < bBoxes.length; j++) {
+        bBoxes[j].setFromObject(geos[j]);
+    }
+    playerBox.setFromObject(player);
+    checkCollision();
     renderer.render(scene, camera);
 }
 renderer.setAnimationLoop(animate);
