@@ -28,8 +28,6 @@ const material3 = new THREE.MeshPhongMaterial({ color: 'blue' });
 const player = new THREE.Mesh(geometry, material);
 let cube2 = new THREE.Mesh(geometry, material3);
 let plane = new THREE.Mesh(flatGeo, material2);
-// cube.geometry.computeBoundingBox();
-// cube2.geometry.computeBoundingBox();
 scene.add(player);
 scene.add(cube2);
 cube2.position.x += 5;
@@ -48,6 +46,10 @@ plane.rotation.x = 1 / 2 * Math.PI;
 camera.position.set(0, 2, 10);
 // camera.rotation.x = (Math.PI/2);
 // plane.rotation.x = Math.PI;
+plane.geometry.computeBoundingBox();
+
+const helper = new THREE.Box3Helper(plane.geometry.boundingBox, 0xffff00);
+scene.add(helper);
 
 // const loader = new GLTFLoader();
 
@@ -76,12 +78,30 @@ function resizeRendererToDisplaySize(renderer) {
     return needResize;
 }
 
-function movePlayer() {
+function moveKeys() {
+    let keysPressing = []
     for (let key of Object.keys(keyPressed)) {
         if (keyPressed[key] == true) {
-            return key
+            keysPressing.push(key);
         }
     }
+    return keysPressing
+}
+
+function outOfBounds() {
+    for (let geoCheck of geos) {
+        if (camera.position.z < geoCheck.position.z) {
+            geoCheck.position.z = -10;
+        }
+    }
+    if (camera.position.z < player.position.z) {
+        player.position.z = -10;
+    }
+    // if (playerBox.min.x < plane.geometry.boundingBox.min.x) {
+    //     player.position.x += 0.5;
+    // } else if (playerBox.max.x > plane.geometry.boundingBox.max.x) {
+    //     player.position.x -= 0.5;
+    // }
 }
 
 let currentScore = 0;
@@ -110,7 +130,57 @@ function createGeos(size, num, material) {
 }
 
 function gameOver(score) {
+    // localStorage.setItem('highScore', score);
+    let highScore = localStorage.getItem('highScore');
+    if(highScore && highScore < score){
+        localStorage['highScore'] = score;
+    }else if(!highScore){
+        localStorage.setItem('highScore', score);
+    }
+    renderer.forceContextLoss();
+    renderer.setAnimationLoop(null);
+    canvas.style.display = 'none';
+    let div = document.createElement('div');
+    div.id = 'endScreen';
+    div.innerHTML = `
+   <h1>You Died!</h1>
+   <h2>You got a score of ${score}<br>And a highscore of ${highScore}</h2>
+   <button onclick='window.location.reload()'>Retry</button>
+   `
+    document.body.appendChild(div);
+}
 
+function movePlayer() {
+    let moveInt = 0.5;
+    let movement = moveKeys();
+    for (let moves of movement) {
+        switch (moves) {
+            case 'ArrowRight':
+                player.position.x += moveInt;
+                break;
+            case 'ArrowLeft':
+                player.position.x -= moveInt;
+                break;
+            case 'ArrowUp':
+                player.position.z -= moveInt;
+                break;
+            case 'ArrowDown':
+                player.position.z += moveInt;
+                break;
+            case 'd':
+                cube2.position.x += moveInt;
+                break;
+            case 'a':
+                cube2.position.x -= moveInt;
+                break;
+            case 'w':
+                cube2.position.z -= moveInt;
+                break;
+            case 's':
+                cube2.position.z += moveInt;
+                break;
+        }
+    }
 }
 
 function animate() {
@@ -118,44 +188,18 @@ function animate() {
         camera.aspect = canvas.clientWidth / canvas.clientHeight;
         camera.updateProjectionMatrix();
     }
-    let moveInt = 0.5;
-    switch (movePlayer()) {
-        case 'ArrowRight':
-            player.position.x += moveInt;
-            break;
-        case 'ArrowLeft':
-            player.position.x -= moveInt;
-            break;
-        case 'd':
-            cube2.position.x += moveInt;
-            break;
-        case 'a':
-            cube2.position.x -= moveInt;
-            break;
-        case 'w':
-            cube2.position.z -= moveInt;
-            break;
-        case 's':
-            cube2.position.z += moveInt;
-            break;
-        case 'ArrowUp':
-            player.position.z -= moveInt;
-            break;
-        case 'ArrowDown':
-            player.position.z += moveInt;
-            break;
-        case 'Control':
-            player.position.y -= moveInt;
-            break;
-        case ' ':
-            player.position.y += moveInt;
-            break;
-    }
+
+    // if(playerBox.intersectsBox(plane.geometry.boundingBox)){
+    movePlayer();
+    // }
+    // console.log(plane);
     for (let j = 0; j < bBoxes.length; j++) {
         bBoxes[j].setFromObject(geos[j]);
     }
     playerBox.setFromObject(player);
+    // cube2.position.z += 0.5;
     checkCollision();
+    outOfBounds();
     renderer.render(scene, camera);
 }
 renderer.setAnimationLoop(animate);
