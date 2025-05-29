@@ -11,6 +11,10 @@ const canvas = document.querySelector('#canvas');
 const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, premultipliedAlpha: false });
 renderer.setSize(window.innerWidth, window.innerHeight);
 // document.body.appendChild(renderer.domElement);
+canvas.focus();
+
+let planeX = 5;
+let planeZ = 20;
 
 const loader = new THREE.TextureLoader();
 const texture = loader.load('/images/checker.png');
@@ -18,38 +22,59 @@ texture.wrapS = THREE.RepeatWrapping;
 texture.wrapT = THREE.RepeatWrapping;
 texture.magFilter = THREE.NearestFilter;
 texture.colorSpace = THREE.SRGBColorSpace;
-texture.repeat.set(5, 5);
+texture.repeat.set(planeX / 2, planeZ / 2);
 
 const geometry = new THREE.BoxGeometry(1, 1, 1);
-const flatGeo = new THREE.PlaneGeometry(10, 10);
+const smallGeo = new THREE.BoxGeometry(0.9, 0.9, 0.9);
+const flatGeo = new THREE.PlaneGeometry(planeX, planeZ);
 const material = new THREE.MeshPhongMaterial({ color: 0x00ff00, flatShading: true });
 const material2 = new THREE.MeshPhongMaterial({ map: texture, side: THREE.DoubleSide });
 const material3 = new THREE.MeshPhongMaterial({ color: 'blue' });
 const player = new THREE.Mesh(geometry, material);
-let cube2 = new THREE.Mesh(geometry, material3);
+let cube1 = new THREE.Mesh(smallGeo, material3);
+let cube2 = new THREE.Mesh(smallGeo, material3);
+let cube3 = new THREE.Mesh(smallGeo, material3);
+let cube4 = new THREE.Mesh(smallGeo, material3);
+let cube5 = new THREE.Mesh(smallGeo, material3);
 let plane = new THREE.Mesh(flatGeo, material2);
 scene.add(player);
+scene.add(cube1);
 scene.add(cube2);
-cube2.position.x += 5;
+scene.add(cube3);
+scene.add(cube4);
+scene.add(cube5);
 scene.add(plane);
 
-const playerBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
-// cube1Box.setFromObject(cube);
-// cube1Box.union(cube);
-const cube2Box = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
-cube2Box.setFromObject(cube2);
+const group = new THREE.Group();
 
-plane.position.y = -1;
-// plane.position.y = 48;
+group.add(cube1);
+group.add(cube2);
+group.add(cube3);
+group.add(cube4);
+group.add(cube5);
+group.position.set(0,0,0);
+group.visible = true;
+
+let moveInt = 0.5;
+
+const playerBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+const cube1Box = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+const cube2Box = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+const cube3Box = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+const cube4Box = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+const cube5Box = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+cube1Box.setFromObject(cube1);
+cube2Box.setFromObject(cube2);
+cube3Box.setFromObject(cube3);
+cube4Box.setFromObject(cube4);
+cube5Box.setFromObject(cube5);
+
+plane.position.y = -0.5;
+player.position.x += 1;
 plane.rotation.x = 1 / 2 * Math.PI;
-// camera.rotation.x = 1.3;
 camera.position.set(0, 2, 10);
-// camera.rotation.x = (Math.PI/2);
-// plane.rotation.x = Math.PI;
 plane.geometry.computeBoundingBox();
 
-const helper = new THREE.Box3Helper(plane.geometry.boundingBox, 0xffff00);
-scene.add(helper);
 
 // const loader = new GLTFLoader();
 
@@ -82,25 +107,43 @@ function moveKeys() {
     let keysPressing = []
     for (let key of Object.keys(keyPressed)) {
         if (keyPressed[key] == true) {
-            keysPressing.push(key);
+            keysPressing.push(parseInt(key));
         }
     }
     return keysPressing
 }
 
+async function spawnCubes() {
+    for (let i = 0; i < 5; i++) {
+        if (Math.round(Math.random()) === 1) {
+            if (geos[i]) {
+                geos[i].position.x = (i - 2);
+            }
+        } else {
+            if (geos[i]) {
+                geos[i].position.x = -100;
+            }
+        }
+    }
+}
+
+// function sleep(ms) {
+//     return new Promise(resolve => setTimeout(resolve, ms || DEF_DELAY));
+// }
+
 function outOfBounds() {
     for (let geoCheck of geos) {
         if (camera.position.z < geoCheck.position.z) {
-            geoCheck.position.z = -10;
+            geoCheck.position.set(-100,0,0);
         }
     }
-    if (camera.position.z < player.position.z) {
-        player.position.z = -10;
-    }
+    // if (camera.position.z < player.position.z) {
+    //     player.position.z = -10;
+    // }
     // if (playerBox.min.x < plane.geometry.boundingBox.min.x) {
-    //     player.position.x += 0.5;
+    //     player.position.x += moveInt;
     // } else if (playerBox.max.x > plane.geometry.boundingBox.max.x) {
-    //     player.position.x -= 0.5;
+    //     player.position.x -= moveInt;
     // }
 }
 
@@ -117,9 +160,8 @@ function checkCollision() {
     }
 }
 
-
-let bBoxes = [cube2Box];
-let geos = [cube2];
+let bBoxes = [cube1Box, cube2Box, cube3Box, cube4Box, cube5Box];
+let geos = [cube1, cube2, cube3, cube4, cube5];
 
 function createGeos(size, num, material) {
     let geo = new THREE.BoxGeometry(size, size, size);
@@ -130,11 +172,10 @@ function createGeos(size, num, material) {
 }
 
 function gameOver(score) {
-    // localStorage.setItem('highScore', score);
     let highScore = localStorage.getItem('highScore');
-    if(highScore && highScore < score){
+    if (highScore && highScore < score) {
         localStorage['highScore'] = score;
-    }else if(!highScore){
+    } else if (!highScore) {
         localStorage.setItem('highScore', score);
     }
     renderer.forceContextLoss();
@@ -151,64 +192,69 @@ function gameOver(score) {
 }
 
 function movePlayer() {
-    let moveInt = 0.5;
     let movement = moveKeys();
     for (let moves of movement) {
         switch (moves) {
-            case 'ArrowRight':
+            case 39:
                 player.position.x += moveInt;
                 break;
-            case 'ArrowLeft':
+            case 37:
                 player.position.x -= moveInt;
                 break;
-            case 'ArrowUp':
+            case 38:
                 player.position.z -= moveInt;
                 break;
-            case 'ArrowDown':
+            case 40:
                 player.position.z += moveInt;
                 break;
-            case 'd':
-                cube2.position.x += moveInt;
+            case 68:
+                player.position.x += moveInt;
                 break;
-            case 'a':
-                cube2.position.x -= moveInt;
+            case 65:
+                player.position.x -= moveInt;
                 break;
-            case 'w':
-                cube2.position.z -= moveInt;
+            case 87:
+                player.position.z -= moveInt;
                 break;
-            case 's':
-                cube2.position.z += moveInt;
+            case 83:
+                player.position.z += moveInt;
                 break;
         }
     }
 }
+let numer = 0;
 
 function animate() {
+    if(numer >= 10){
+        numer = 0;
+    }
     if (resizeRendererToDisplaySize(renderer)) {
         camera.aspect = canvas.clientWidth / canvas.clientHeight;
         camera.updateProjectionMatrix();
     }
-
-    // if(playerBox.intersectsBox(plane.geometry.boundingBox)){
     movePlayer();
-    // }
-    // console.log(plane);
     for (let j = 0; j < bBoxes.length; j++) {
         bBoxes[j].setFromObject(geos[j]);
     }
+    if(numer == 1){
+        spawnCubes();
+    }
     playerBox.setFromObject(player);
-    // cube2.position.z += 0.5;
+    // cube2.position.z += moveInt;
     checkCollision();
     outOfBounds();
     renderer.render(scene, camera);
+    // numer++
+    console.log(group);
 }
 renderer.setAnimationLoop(animate);
+
 let keyPressed = {};
 
 document.querySelector('#canvas').addEventListener('keydown', (e) => {
-    keyPressed[e.key] = true;
+    keyPressed[e.keyCode] = true;
 });
 
 document.querySelector('#canvas').addEventListener('keyup', (e) => {
-    keyPressed[e.key] = false;
+    keyPressed[e.keyCode] = false;
 });
