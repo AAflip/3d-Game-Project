@@ -45,16 +45,6 @@ scene.add(cube4);
 scene.add(cube5);
 scene.add(plane);
 
-const group = new THREE.Group();
-
-group.add(cube1);
-group.add(cube2);
-group.add(cube3);
-group.add(cube4);
-group.add(cube5);
-group.position.set(0,0,0);
-group.visible = true;
-
 let moveInt = 0.5;
 
 const playerBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
@@ -70,7 +60,7 @@ cube4Box.setFromObject(cube4);
 cube5Box.setFromObject(cube5);
 
 plane.position.y = -0.5;
-player.position.x += 1;
+player.position.z -= 100;
 plane.rotation.x = 1 / 2 * Math.PI;
 camera.position.set(0, 2, 10);
 plane.geometry.computeBoundingBox();
@@ -134,7 +124,9 @@ async function spawnCubes() {
 function outOfBounds() {
     for (let geoCheck of geos) {
         if (camera.position.z < geoCheck.position.z) {
-            geoCheck.position.set(-100,0,0);
+            // geoCheck.position.set(-100,0,0);
+            geoCheck.position.z = -10;
+            spawnCubes();
         }
     }
     // if (camera.position.z < player.position.z) {
@@ -222,6 +214,12 @@ function movePlayer() {
         }
     }
 }
+
+function moveObsticals(){
+    for(let obj of geos){
+        obj.position.z += moveInt;
+    }
+}
 let numer = 0;
 
 function animate() {
@@ -237,15 +235,15 @@ function animate() {
         bBoxes[j].setFromObject(geos[j]);
     }
     if(numer == 1){
-        spawnCubes();
+        
     }
     playerBox.setFromObject(player);
     // cube2.position.z += moveInt;
     checkCollision();
     outOfBounds();
+    moveObsticals();
     renderer.render(scene, camera);
-    // numer++
-    console.log(group);
+    numer++
 }
 renderer.setAnimationLoop(animate);
 
