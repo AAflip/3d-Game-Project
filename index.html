@@ -8,7 +8,25 @@
 </head>
 
 <body>
+  <h2 id="scoreCounter">Score:</h2>
   <canvas tabindex="0" id="canvas"></canvas>
+  <div id="start">
+    <h1>Temple Fun!</h1>
+    <div id="startMenu">
+      <button id="startGame">Start Game</button>
+      <button id="howTo">How to Play</button>
+      <button id="options">Options</button>
+    </div>
+    <div id="howText">
+      <p>Use A and D or the arrow keys to move left and right</p>
+      <p>Avoid the boxes as long as possible</p>
+      <p>And grab as many (collectable) as possible!</p>
+      <button id="return">Return</button>
+    </div>
+    <div id="optionMenu">
+      <button id="return">Return</button>
+    </div>
+  </div>
   <script type="importmap">
     {
       "imports": {
@@ -25,6 +43,33 @@
       padding: 0;
       height: 100%;
       width: 100%;
+    }
+
+    #start {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      flex-direction: column;
+      left: 50%;
+      top: 30%;
+      transform: translate(-50%, -30%);
+    }
+
+    #start>div:not(#startMenu) {
+      position: absolute;
+      top: 70%;
+      display: none;
+      flex-direction: column;
+    }
+
+    #startMenu {
+      display: flex;
+      flex-direction: column;
+    }
+
+    #scoreCounter {
+      position: absolute;
+      display: none;
     }
 
     #canvas {

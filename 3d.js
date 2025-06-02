@@ -11,10 +11,9 @@ const canvas = document.querySelector('#canvas');
 const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, premultipliedAlpha: false });
 renderer.setSize(window.innerWidth, window.innerHeight);
 // document.body.appendChild(renderer.domElement);
-canvas.focus();
 
 let planeX = 5;
-let planeZ = 20;
+let planeZ = 200;
 
 const loader = new THREE.TextureLoader();
 const texture = loader.load('/images/checker.png');
@@ -25,42 +24,22 @@ texture.colorSpace = THREE.SRGBColorSpace;
 texture.repeat.set(planeX / 2, planeZ / 2);
 
 const geometry = new THREE.BoxGeometry(1, 1, 1);
-const smallGeo = new THREE.BoxGeometry(0.9, 0.9, 0.9);
+const smallGeo = new THREE.BoxGeometry(0.7, 0.7, 0.7);
 const flatGeo = new THREE.PlaneGeometry(planeX, planeZ);
 const material = new THREE.MeshPhongMaterial({ color: 0x00ff00, flatShading: true });
 const material2 = new THREE.MeshPhongMaterial({ map: texture, side: THREE.DoubleSide });
 const material3 = new THREE.MeshPhongMaterial({ color: 'blue' });
 const player = new THREE.Mesh(geometry, material);
-let cube1 = new THREE.Mesh(smallGeo, material3);
-let cube2 = new THREE.Mesh(smallGeo, material3);
-let cube3 = new THREE.Mesh(smallGeo, material3);
-let cube4 = new THREE.Mesh(smallGeo, material3);
-let cube5 = new THREE.Mesh(smallGeo, material3);
 let plane = new THREE.Mesh(flatGeo, material2);
 scene.add(player);
-scene.add(cube1);
-scene.add(cube2);
-scene.add(cube3);
-scene.add(cube4);
-scene.add(cube5);
 scene.add(plane);
 
-let moveInt = 0.5;
+let moveInt = 0.2;
 
 const playerBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
-const cube1Box = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
-const cube2Box = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
-const cube3Box = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
-const cube4Box = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
-const cube5Box = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
-cube1Box.setFromObject(cube1);
-cube2Box.setFromObject(cube2);
-cube3Box.setFromObject(cube3);
-cube4Box.setFromObject(cube4);
-cube5Box.setFromObject(cube5);
 
 plane.position.y = -0.5;
-player.position.z -= 100;
+player.position.z += 2;
 plane.rotation.x = 1 / 2 * Math.PI;
 camera.position.set(0, 2, 10);
 plane.geometry.computeBoundingBox();
@@ -125,55 +104,69 @@ function outOfBounds() {
     for (let geoCheck of geos) {
         if (camera.position.z < geoCheck.position.z) {
             // geoCheck.position.set(-100,0,0);
-            geoCheck.position.z = -10;
+            geoCheck.position.z = -20;
             spawnCubes();
         }
     }
-    // if (camera.position.z < player.position.z) {
-    //     player.position.z = -10;
-    // }
-    // if (playerBox.min.x < plane.geometry.boundingBox.min.x) {
-    //     player.position.x += moveInt;
-    // } else if (playerBox.max.x > plane.geometry.boundingBox.max.x) {
-    //     player.position.x -= moveInt;
-    // }
+    if (camera.position.z < player.position.z) {
+        player.position.z = -10;
+    }
+    if (playerBox.min.x < plane.geometry.boundingBox.min.x) {
+        player.position.x += moveInt;
+    } else if (playerBox.max.x > plane.geometry.boundingBox.max.x) {
+        player.position.x -= moveInt;
+    }
 }
 
 let currentScore = 0;
+let addPoints = true;
 
 function checkCollision() {
     for (let box2 of bBoxes) {
         if (playerBox.containsBox(box2) || playerBox.intersectsBox(box2)) {
             scene.remove(player);
             gameOver(currentScore);
+            return true
         } else {
-            currentScore++;
+            if(player.position.z > box2.max.z && addPoints){
+                currentScore += 5;
+                addPoints = false;
+            }
         }
     }
 }
 
-let bBoxes = [cube1Box, cube2Box, cube3Box, cube4Box, cube5Box];
-let geos = [cube1, cube2, cube3, cube4, cube5];
+let bBoxes = [];
+let geos = [];
 
-function createGeos(size, num, material) {
-    let geo = new THREE.BoxGeometry(size, size, size);
-    let funcMaterial = new THREE.MeshPhongMaterial({ color: material, flatShading: true });
-    for (let i = 0; i < num; i++) {
-        geos.push(new THREE.Mesh(geo, funcMaterial));
+function createGeos() {
+    for (let i = 0; i < 5; i++) {
+        let tempMesh = new THREE.Mesh(smallGeo, material3)
+        geos.push(tempMesh);
+        scene.add(tempMesh);
+        tempMesh.position.z = -20;
+        let tempBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3())
+        bBoxes.push(tempBox);
+        tempBox.setFromObject(tempMesh);
     }
 }
+
+createGeos();
 
 function gameOver(score) {
     let highScore = localStorage.getItem('highScore');
     if (highScore && highScore < score) {
         localStorage['highScore'] = score;
+        highScore = score;
     } else if (!highScore) {
         localStorage.setItem('highScore', score);
+        highScore = score;
     }
     renderer.forceContextLoss();
     renderer.setAnimationLoop(null);
     canvas.style.display = 'none';
     let div = document.createElement('div');
+    document.querySelector('#scoreCounter').style.display = 'none';
     div.id = 'endScreen';
     div.innerHTML = `
    <h1>You Died!</h1>
@@ -193,59 +186,70 @@ function movePlayer() {
             case 37:
                 player.position.x -= moveInt;
                 break;
-            case 38:
-                player.position.z -= moveInt;
-                break;
-            case 40:
-                player.position.z += moveInt;
-                break;
+            // case 38:
+            //     player.position.z -= moveInt;
+            //     break;
+            // case 40:
+            //     player.position.z += moveInt;
+            //     break;
             case 68:
                 player.position.x += moveInt;
                 break;
             case 65:
                 player.position.x -= moveInt;
                 break;
-            case 87:
-                player.position.z -= moveInt;
-                break;
-            case 83:
-                player.position.z += moveInt;
-                break;
+            // case 87:
+            //     player.position.z -= moveInt;
+            //     break;
+            // case 83:
+            //     player.position.z += moveInt;
+            //     break;
         }
     }
 }
 
-function moveObsticals(){
-    for(let obj of geos){
+function moveObsticals() {
+    for (let obj of geos) {
         obj.position.z += moveInt;
     }
 }
-let numer = 0;
 
 function animate() {
-    if(numer >= 10){
-        numer = 0;
-    }
-    if (resizeRendererToDisplaySize(renderer)) {
-        camera.aspect = canvas.clientWidth / canvas.clientHeight;
-        camera.updateProjectionMatrix();
-    }
+    // if (resizeRendererToDisplaySize(renderer)) {
+    //     camera.aspect = canvas.clientWidth / canvas.clientHeight;
+    //     camera.updateProjectionMatrix();
+    // }
     movePlayer();
     for (let j = 0; j < bBoxes.length; j++) {
         bBoxes[j].setFromObject(geos[j]);
-    }
-    if(numer == 1){
-        
     }
     playerBox.setFromObject(player);
     // cube2.position.z += moveInt;
     checkCollision();
     outOfBounds();
     moveObsticals();
+    document.querySelector('#scoreCounter').innerHTML = `Score: ${currentScore}`
     renderer.render(scene, camera);
-    numer++
 }
-renderer.setAnimationLoop(animate);
+
+document.querySelector('#start').addEventListener('click', (e) => {
+    if (e.target.id == 'howTo') {
+        document.querySelector('#startMenu').style.display = 'none';
+        document.querySelector('#howText').style.display = 'flex';
+    } else if (e.target.id == 'options') {
+        document.querySelector('#startMenu').style.display = 'none';
+        document.querySelector('#optionMenu').style.display = 'flex';
+    } else if (e.target.id == 'startGame') {
+        renderer.setAnimationLoop(animate);
+        canvas.focus();
+        document.querySelector('#scoreCounter').style.display = 'block';
+        document.querySelector('#start').style.display = 'none';
+    } else {
+        document.querySelector('#startMenu').style.display = 'flex';
+        document.querySelector('#howText').style.display = 'none';
+        document.querySelector('#optionMenu').style.display = 'none';
+    }
+})
 
 let keyPressed = {};
 
