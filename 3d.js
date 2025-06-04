@@ -25,10 +25,12 @@ texture.repeat.set(planeX / 2, planeZ / 2);
 
 const geometry = new THREE.BoxGeometry(1, 1, 1);
 const smallGeo = new THREE.BoxGeometry(0.7, 0.7, 0.7);
+const circGeo = new THREE.CircleGeometry(0.5, 50);
 const flatGeo = new THREE.PlaneGeometry(planeX, planeZ);
 const material = new THREE.MeshPhongMaterial({ color: 0x00ff00, flatShading: true });
 const material2 = new THREE.MeshPhongMaterial({ map: texture, side: THREE.DoubleSide });
 const material3 = new THREE.MeshPhongMaterial({ color: 'blue' });
+const material4 = new THREE.MeshPhongMaterial({ color: 'gold', side: THREE.DoubleSide });
 const player = new THREE.Mesh(geometry, material);
 let plane = new THREE.Mesh(flatGeo, material2);
 scene.add(player);
@@ -84,15 +86,22 @@ function moveKeys() {
 
 async function spawnCubes() {
     for (let i = 0; i < 5; i++) {
-        if (Math.round(Math.random()) === 1) {
+        let ranNum = Math.round(Math.random() * 2);
+        if (ranNum === 1) {
             if (geos[i]) {
                 geos[i].position.x = (i - 2);
             }
-        } else {
+            collects[i].position.x = -100;
+        } else if (ranNum === 0) {
             if (geos[i]) {
                 geos[i].position.x = -100;
             }
+            collects[i].position.x = -100;
+        } else if (ranNum === 2) {
+            collects[i].position.x = (i - 2);
         }
+        collects[i].rotation.y = 0;
+        bCollects[i].setFromObject(collects[i]); //aargh
     }
 }
 
@@ -101,16 +110,20 @@ async function spawnCubes() {
 // }
 
 function outOfBounds() {
-    for (let geoCheck of geos) {
-        if (camera.position.z < geoCheck.position.z) {
-            // geoCheck.position.set(-100,0,0);
+    if (camera.position.z < geos[0].position.z) {
+        for (let geoCheck of geos) {
             geoCheck.position.z = -20;
-            spawnCubes();
         }
+        for (let coinCheck of collects) {
+            coinCheck.position.z = -20;
+        }
+        spawnCubes();
+        addPoints = true;
     }
-    if (camera.position.z < player.position.z) {
-        player.position.z = -10;
-    }
+
+    // if (camera.position.z < player.position.z) {
+    //     player.position.z = -10;
+    // }
     if (playerBox.min.x < plane.geometry.boundingBox.min.x) {
         player.position.x += moveInt;
     } else if (playerBox.max.x > plane.geometry.boundingBox.max.x) {
@@ -118,26 +131,28 @@ function outOfBounds() {
     }
 }
 
-let currentScore = 0;
+let currentScore = -5;
 let addPoints = true;
 
 function checkCollision() {
-    for (let box2 of bBoxes) {
-        if (playerBox.containsBox(box2) || playerBox.intersectsBox(box2)) {
-            scene.remove(player);
-            gameOver(currentScore);
-            return true
-        } else {
-            if(player.position.z > box2.max.z && addPoints){
-                currentScore += 5;
-                addPoints = false;
-            }
-        }
-    }
+    // for (let box2 of bBoxes) {
+    //     if (playerBox.containsBox(box2) || playerBox.intersectsBox(box2)) {
+    //         scene.remove(player);
+    //         gameOver(currentScore);
+    //         return true
+    //     } else {
+    //         if (player.position.z > box2.max.z && addPoints) {
+    //             currentScore += 5;
+    //             addPoints = false;
+    //         }
+    //     }
+    // }
 }
 
 let bBoxes = [];
 let geos = [];
+let collects = [];
+let bCollects = [];
 
 function createGeos() {
     for (let i = 0; i < 5; i++) {
@@ -145,10 +160,18 @@ function createGeos() {
         geos.push(tempMesh);
         scene.add(tempMesh);
         tempMesh.position.z = -20;
-        let tempBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3())
+        let tempBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
         bBoxes.push(tempBox);
         tempBox.setFromObject(tempMesh);
+        let tempCirc = new THREE.Mesh(circGeo, material4);
+        let tempCircBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+        collects.push(tempCirc);
+        bCollects.push(tempCircBox);
+        scene.add(tempCirc);
+        tempCirc.position.z = -20;
+        tempCircBox.setFromObject(tempCirc);
     }
+    spawnCubes();
 }
 
 createGeos();
@@ -204,13 +227,19 @@ function movePlayer() {
             // case 83:
             //     player.position.z += moveInt;
             //     break;
+            case 32:
+                player.position.y += moveInt;
+                break;
         }
     }
 }
 
 function moveObsticals() {
     for (let obj of geos) {
-        obj.position.z += moveInt;
+        obj.position.z += moveInt*2;
+    }
+    for (let coin of collects) {
+        coin.position.z += moveInt*2;
     }
 }
 
@@ -223,8 +252,12 @@ function animate() {
     for (let j = 0; j < bBoxes.length; j++) {
         bBoxes[j].setFromObject(geos[j]);
     }
+    for (let k = 0; k < collects.length; k++) {
+        collects[k].rotation.y += 0.05;
+        bCollects[k].max.z += moveInt*2;
+        bCollects[k].min.z += moveInt*2;
+    }
     playerBox.setFromObject(player);
-    // cube2.position.z += moveInt;
     checkCollision();
     outOfBounds();
     moveObsticals();
@@ -244,12 +277,29 @@ document.querySelector('#start').addEventListener('click', (e) => {
         canvas.focus();
         document.querySelector('#scoreCounter').style.display = 'block';
         document.querySelector('#start').style.display = 'none';
-    } else {
+    } else if (e.target.id == 'return') {
         document.querySelector('#startMenu').style.display = 'flex';
         document.querySelector('#howText').style.display = 'none';
         document.querySelector('#optionMenu').style.display = 'none';
     }
-})
+});
+
+let jumpable = true;
+
+document.querySelector('#optionMenu').addEventListener('change', (e) => {
+    let slider = document.querySelector('#moveRange');
+    let input = document.querySelector('#moveNum');
+    let check = document.querySelector('#jumpCheck');
+    if(e.target.id == 'moveNum'){
+        slider.value = input.value;
+        moveInt = (input.value/100);
+    }else if(e.target.id == 'moveRange'){
+        input.value = slider.value;
+        moveInt = (slider.value/100);
+    }else if(e.target.id == 'jumpCheck'){
+        jumpable = check.checked;
+    }
+});
 
 let keyPressed = {};
 
