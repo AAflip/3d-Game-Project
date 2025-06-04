@@ -24,8 +24,8 @@ texture.colorSpace = THREE.SRGBColorSpace;
 texture.repeat.set(planeX / 2, planeZ / 2);
 
 const geometry = new THREE.BoxGeometry(1, 1, 1);
-const smallGeo = new THREE.BoxGeometry(0.7, 0.7, 0.7);
-const circGeo = new THREE.CircleGeometry(0.5, 50);
+const smallGeo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+const circGeo = new THREE.CircleGeometry(0.4, 50);
 const flatGeo = new THREE.PlaneGeometry(planeX, planeZ);
 const material = new THREE.MeshPhongMaterial({ color: 0x00ff00, flatShading: true });
 const material2 = new THREE.MeshPhongMaterial({ map: texture, side: THREE.DoubleSide });
@@ -87,21 +87,22 @@ function moveKeys() {
 async function spawnCubes() {
     for (let i = 0; i < 5; i++) {
         let ranNum = Math.round(Math.random() * 2);
-        if (ranNum === 1) {
+        if (ranNum === 1) { //cube
             if (geos[i]) {
                 geos[i].position.x = (i - 2);
             }
             collects[i].position.x = -100;
-        } else if (ranNum === 0) {
+        } else if (ranNum === 0) { //nothing
             if (geos[i]) {
                 geos[i].position.x = -100;
             }
             collects[i].position.x = -100;
-        } else if (ranNum === 2) {
+        } else if (ranNum === 2) { //coin
+            geos[i].position.x = -100;
             collects[i].position.x = (i - 2);
         }
         collects[i].rotation.y = 0;
-        bCollects[i].setFromObject(collects[i]); //aargh
+        bCollects[i].setFromObject(collects[i]);
     }
 }
 
@@ -135,18 +136,25 @@ let currentScore = -5;
 let addPoints = true;
 
 function checkCollision() {
-    // for (let box2 of bBoxes) {
-    //     if (playerBox.containsBox(box2) || playerBox.intersectsBox(box2)) {
-    //         scene.remove(player);
-    //         gameOver(currentScore);
-    //         return true
-    //     } else {
-    //         if (player.position.z > box2.max.z && addPoints) {
-    //             currentScore += 5;
-    //             addPoints = false;
-    //         }
-    //     }
-    // }
+    for (let box2 of bBoxes) {
+        if (playerBox.containsBox(box2) || playerBox.intersectsBox(box2)) {
+            scene.remove(player);
+            gameOver(currentScore);
+            return true
+        } else {
+            if (player.position.z > box2.max.z && addPoints) {
+                currentScore += 5;
+                addPoints = false;
+            }
+        }
+    }
+    for(let s=0;s<bCollects.length;s++){
+        if (playerBox.containsBox(bCollects[s]) || playerBox.intersectsBox(bCollects[s])) {
+            collects[s].position.x = -100;
+            bCollects[s].setFromObject(collects[s]);
+            currentScore += 20;
+        }
+    }
 }
 
 let bBoxes = [];
@@ -257,6 +265,7 @@ function animate() {
         bCollects[k].max.z += moveInt*2;
         bCollects[k].min.z += moveInt*2;
     }
+    // player.applyCentralImpulse(20) start here!
     playerBox.setFromObject(player);
     checkCollision();
     outOfBounds();
