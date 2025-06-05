@@ -32,19 +32,19 @@ const material2 = new THREE.MeshPhongMaterial({ map: texture, side: THREE.Double
 const material3 = new THREE.MeshPhongMaterial({ color: 'blue' });
 const material4 = new THREE.MeshPhongMaterial({ color: 'gold', side: THREE.DoubleSide });
 const player = new THREE.Mesh(geometry, material);
-let plane = new THREE.Mesh(flatGeo, material2);
+let ground = new THREE.Mesh(flatGeo, material2);
 scene.add(player);
-scene.add(plane);
+scene.add(ground);
 
 let moveInt = 0.2;
 
 const playerBox = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
 
-plane.position.y = -0.5;
+ground.position.y = -0.5;
 player.position.z += 2;
-plane.rotation.x = 1 / 2 * Math.PI;
+ground.rotation.x = 1 / 2 * Math.PI;
 camera.position.set(0, 2, 10);
-plane.geometry.computeBoundingBox();
+ground.geometry.computeBoundingBox();
 
 
 // const loader = new GLTFLoader();
@@ -125,15 +125,16 @@ function outOfBounds() {
     // if (camera.position.z < player.position.z) {
     //     player.position.z = -10;
     // }
-    if (playerBox.min.x < plane.geometry.boundingBox.min.x) {
+    if (playerBox.min.x < ground.geometry.boundingBox.min.x) {
         player.position.x += moveInt;
-    } else if (playerBox.max.x > plane.geometry.boundingBox.max.x) {
+    } else if (playerBox.max.x > ground.geometry.boundingBox.max.x) {
         player.position.x -= moveInt;
     }
 }
 
 let currentScore = -5;
 let addPoints = true;
+let coinsCollected = 0;
 
 function checkCollision() {
     for (let box2 of bBoxes) {
@@ -148,11 +149,12 @@ function checkCollision() {
             }
         }
     }
-    for(let s=0;s<bCollects.length;s++){
+    for (let s = 0; s < bCollects.length; s++) {
         if (playerBox.containsBox(bCollects[s]) || playerBox.intersectsBox(bCollects[s])) {
             collects[s].position.x = -100;
             bCollects[s].setFromObject(collects[s]);
             currentScore += 20;
+            coinsCollected++;
         }
     }
 }
@@ -201,7 +203,7 @@ function gameOver(score) {
     div.id = 'endScreen';
     div.innerHTML = `
    <h1>You Died!</h1>
-   <h2>You got a score of ${score}<br>And a highscore of ${highScore}</h2>
+   <h2>You got a score of ${score},<br>A highscore of ${highScore},<br>And collected ${coinsCollected} coins</h2>
    <button onclick='window.location.reload()'>Retry</button>
    `
     document.body.appendChild(div);
@@ -217,55 +219,60 @@ function movePlayer() {
             case 37:
                 player.position.x -= moveInt;
                 break;
-            // case 38:
-            //     player.position.z -= moveInt;
-            //     break;
-            // case 40:
-            //     player.position.z += moveInt;
-            //     break;
             case 68:
                 player.position.x += moveInt;
                 break;
             case 65:
                 player.position.x -= moveInt;
                 break;
-            // case 87:
-            //     player.position.z -= moveInt;
+            // case 32:
+            //     player.position.y += moveInt;
             //     break;
-            // case 83:
-            //     player.position.z += moveInt;
+            // case 17:
+            //     player.position.y -= moveInt;
             //     break;
-            case 32:
-                player.position.y += moveInt;
-                break;
         }
     }
 }
 
+function playerGravity(){
+    player.position.y -= 0.05;
+}
+
 function moveObsticals() {
     for (let obj of geos) {
-        obj.position.z += moveInt*2;
+        obj.position.z += moveInt * 2;
     }
     for (let coin of collects) {
-        coin.position.z += moveInt*2;
+        coin.position.z += moveInt * 2;
     }
 }
 
 function animate() {
-    // if (resizeRendererToDisplaySize(renderer)) {
-    //     camera.aspect = canvas.clientWidth / canvas.clientHeight;
-    //     camera.updateProjectionMatrix();
-    // }
+    if (resizeRendererToDisplaySize(renderer)) {
+        camera.aspect = canvas.clientWidth / canvas.clientHeight;
+        camera.updateProjectionMatrix();
+    }
     movePlayer();
     for (let j = 0; j < bBoxes.length; j++) {
         bBoxes[j].setFromObject(geos[j]);
     }
     for (let k = 0; k < collects.length; k++) {
         collects[k].rotation.y += 0.05;
-        bCollects[k].max.z += moveInt*2;
-        bCollects[k].min.z += moveInt*2;
+        bCollects[k].max.z += moveInt * 2;
+        bCollects[k].min.z += moveInt * 2;
     }
-    // player.applyCentralImpulse(20) start here!
+
+    if (jumpable) {
+        if(player.position.y > (ground.position.y + 0.5)){
+            playerGravity();
+        }
+    }
+
+    if(player.position.y < ground.position.y){
+        player.position.y = 0;
+    }
+
     playerBox.setFromObject(player);
     checkCollision();
     outOfBounds();
@@ -299,13 +306,13 @@ document.querySelector('#optionMenu').addEventListener('change', (e) => {
     let slider = document.querySelector('#moveRange');
     let input = document.querySelector('#moveNum');
     let check = document.querySelector('#jumpCheck');
-    if(e.target.id == 'moveNum'){
+    if (e.target.id == 'moveNum') {
         slider.value = input.value;
-        moveInt = (input.value/100);
-    }else if(e.target.id == 'moveRange'){
+        moveInt = (input.value / 100);
+    } else if (e.target.id == 'moveRange') {
         input.value = slider.value;
-        moveInt = (slider.value/100);
-    }else if(e.target.id == 'jumpCheck'){
+        moveInt = (slider.value / 100);
+    } else if (e.target.id == 'jumpCheck') {
         jumpable = check.checked;
     }
 });
@@ -314,6 +321,7 @@ let keyPressed = {};
 
 document.querySelector('#canvas').addEventListener('keydown', (e) => {
     keyPressed[e.keyCode] = true;
+    // console.log(e.keyCode);
 });
 
 document.querySelector('#canvas').addEventListener('keyup', (e) => {
